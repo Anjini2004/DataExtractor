@@ -1,0 +1,22 @@
+{
+    "Certi\ufb01cate ID": "4121P196",
+    "Bene\ufb01ciary Details": {
+        "Beneficiary Name": "Anjini Jamwal",
+        "Gender": "Female",
+        "Age": "18",
+        "ID Veri\ufb01ed": "Aadhaar # XXXXXXXX1592",
+        "Unique Health ID (UHID)": "31639447618740"
+    },
+    "Vaccination Details": {
+        "Vaccine Name": "COVISHIELD",
+        "Vaccinated By": "Serum Institute of India Pvt. Ltd.",
+        "Manufacturer": "COVID-19 vaccine, non-replicating viral vector",
+        "Vaccine Type": "",
+        "Vaccination At": "APOLLO HOSPITAL BG ROAD, BBMP, Karnataka",
+        "Date of Dose": "08 Jan 2022",
+        "Dose Number": "1/2",
+        "Batch Number": "56177909025",
+        "Next Due Date": "Between 02 Apr 2022 and 30 Apr 2022"
+    },
+    "Vaccination Status": "Partially Vaccinated (1 Dose)"
+}
