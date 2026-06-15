@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# Client Files
+PDFs/
+ExtractedJSON/
+
+
 # Distribution / packaging
 .Python
 build/

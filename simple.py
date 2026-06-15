@@ -1,6 +1,6 @@
 from langchain.agents import create_agent
 from langchain.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 from pypdf import PdfReader
 from bs4 import BeautifulSoup
 import requests
@@ -8,11 +8,6 @@ import json
 import os
 import re
 
-
-# Create memory file if it doesn't exist
-if not os.path.exists("memory.json"):
-    with open("memory.json", "w") as f:
-        json.dump({}, f)
 
 @tool
 def save_json(filename: str, data: str) -> str:
@@ -30,6 +25,42 @@ def save_json(filename: str, data: str) -> str:
         json.dump(parsed_data, f, indent=4)
 
     return f"Saved valid JSON to {filename}"
+
+
+def normalize_json_text(text: str) -> str:
+    """Normalize text to make JSON detection more reliable.
+    This function converts fancy Unicode characters into normal JSON-friendly characters."""
+
+    if isinstance(text, bytes):
+        text = text.decode("utf-8", "replace")
+    if not isinstance(text, str):
+        text = json.dumps(text)
+
+    replacements = {
+        '“': '"',
+        '”': '"',
+        '‘': "'",
+        '’': "'",
+        '–': '-',
+        '—': '-',
+        '…': '...',
+        '（': '(',
+        '）': ')',
+        '［': '[',
+        '］': ']',
+        '｛': '{',
+        '｝': '}',
+        '\u00a0': ' ',
+        '\u200b': '',
+        '\u2013': '-',
+        '\u2014': '-',
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    return text
+
 
 def sanitize_json_text(text: str) -> str:
     """Escape invalid characters inside JSON string literals."""
@@ -73,53 +104,64 @@ def sanitize_json_text(text: str) -> str:
     return ''.join(result)
 
 
-def extract_json(text: str):
-    """Extract JSON object from model output."""
+def find_json_candidate(text: str) -> str | None:
+    """Find the first balanced JSON object or array in the text."""
+    for i, ch in enumerate(text):
+        if ch not in '{[':
+            continue
 
-    text = text.strip()
+        opener = ch
+        closer = '}' if ch == '{' else ']'
+        depth = 0
+        in_string = False
+        escape = False
 
-    # Remove markdown fences if present
+        for j in range(i, len(text)):
+            ch2 = text[j]
+
+            if escape:
+                escape = False
+                continue
+
+            if ch2 == "\\":
+                escape = True
+                continue
+
+            if ch2 == '"':
+                in_string = not in_string
+                continue
+
+            if in_string:
+                continue
+
+            if ch2 == opener:
+                depth += 1
+            elif ch2 == closer:
+                depth -= 1
+                if depth == 0:
+                    return text[i:j + 1]
+
+    return None
+
+
+def extract_json(text):
+    """Extract JSON object or array from model output."""
+
+    text = normalize_json_text(text).strip()
     text = text.replace("```json", "").replace("```", "").strip()
 
-    start = text.find("{")
-    if start == -1:
-        raise ValueError("No JSON object found")
+    json_text = find_json_candidate(text)
+    if json_text is None:
+        # Retry on cleaned version for common unicode braces or quotes
+        cleaned = normalize_json_text(text)
+        json_text = find_json_candidate(cleaned)
 
-    depth = 0
-    in_string = False
-    escape = False
-    end = None
+    if json_text is None:
+        raise ValueError(
+            "No JSON object found. "
+            f"Response preview: {repr(text[:300])}"
+        )
 
-    for i in range(start, len(text)):
-        ch = text[i]
-
-        if escape:
-            escape = False
-            continue
-
-        if ch == "\\":
-            escape = True
-            continue
-
-        if ch == '"':
-            in_string = not in_string
-            continue
-
-        if in_string:
-            continue
-
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                end = i
-                break
-
-    if end is None:
-        raise ValueError("No complete JSON object found")
-
-    json_text = text[start:end + 1]
     json_text = sanitize_json_text(json_text)
 
     try:
@@ -141,32 +183,7 @@ def extract_json(text: str):
         ) from e
 
 @tool
-def save_memory(key: str, value: str) -> str:
-    """Save information about the user."""
-
-    with open("memory.json", "r") as f:
-        memory = json.load(f)
-
-    memory[key] = value
-
-    with open("memory.json", "w") as f:
-        json.dump(memory, f, indent=4)
-
-    return f"Saved {key}: {value}"
-
-
-@tool
-def get_memory(key: str) -> str:
-    """Retrieve stored information."""
-
-    with open("memory.json", "r") as f:
-        memory = json.load(f)
-
-    return memory.get(key, "Not found")
-
-
-@tool
-def get_resume_data(path: str) -> str:
+def get_data(path: str) -> str:
     """Read text from a PDF resume file."""
 
     if not os.path.exists(path):
@@ -205,8 +222,8 @@ def list_files() -> str:
     return "\n".join(files)
 
 # Local Ollama model
-llm = ChatOllama(
-    model="llama3.2",
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
     temperature=0
 )
 
@@ -214,9 +231,7 @@ llm = ChatOllama(
 agent = create_agent(
     model=llm,
     tools=[
-        save_memory,
-        get_memory,
-        get_resume_data,
+        get_data,
         save_json,
         list_files
     ],
@@ -224,14 +239,25 @@ agent = create_agent(
 You are a helpful assistant.
 
 If the user provides a PDF filename and asks you to extract information:
-1. Use get_resume_data to read the PDF.
+1. Use get_data to read the PDF.
 2. Return ONLY valid JSON.
 3. Do not use markdown.
 4. Do not include explanations.
 5. Do not wrap the JSON in ```json.
 6. The JSON must use key-value format.
 
+Only save text if it is in English Langauge
+
+Examples of saving key-value pair:
+{
+"Beneficiary Name": "Anjini Jamwal",
+"Age": 18
+}
+
+
 For normal conversation, answer normally.
+
+The file that will be entered by the user will be preent under the PDFs folder.
 """)
 
 
@@ -243,7 +269,7 @@ while True:
 
     # If user gives a PDF filename, handle it reliably with Python
     if user_input.lower().endswith(".pdf"):
-        resume_text = get_resume_data.invoke({"path": user_input})
+        text = get_data.invoke({"path": user_input})
 
         extraction_prompt = f"""
 Extract structured data from the following PDF text.
@@ -254,7 +280,7 @@ Do not include explanation.
 Return only the JSON object with no text before or after.
 
 PDF text:
-{resume_text}
+{text}
 """
 
         response = llm.invoke(extraction_prompt)
