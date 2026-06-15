@@ -1,22 +1,118 @@
 {
-    "Certi\ufb01cate ID": "4121P196",
-    "Bene\ufb01ciary Details": {
-        "Beneficiary Name": "Anjini Jamwal",
-        "Gender": "Female",
-        "Age": "18",
-        "ID Veri\ufb01ed": "Aadhaar # XXXXXXXX1592",
-        "Unique Health ID (UHID)": "31639447618740"
+    "name": "Anjini Jamwal",
+    "contact": {
+        "phone": "(518)-308-7938",
+        "email": "jamwaa@rpi.edu",
+        "linkedin": "https://www.linkedin.com/in/anjinijamwal/"
     },
-    "Vaccination Details": {
-        "Vaccine Name": "COVISHIELD",
-        "Vaccinated By": "Serum Institute of India Pvt. Ltd.",
-        "Manufacturer": "COVID-19 vaccine, non-replicating viral vector",
-        "Vaccine Type": "",
-        "Vaccination At": "APOLLO HOSPITAL BG ROAD, BBMP, Karnataka",
-        "Date of Dose": "08 Jan 2022",
-        "Dose Number": "1/2",
-        "Batch Number": "56177909025",
-        "Next Due Date": "Between 02 Apr 2022 and 30 Apr 2022"
+    "objective": "",
+    "skills": [
+        "Python",
+        "C++",
+        "C",
+        "Java",
+        "JavaScript",
+        "CSS",
+        "Linux",
+        "AWS",
+        "MongoDB",
+        "Figma",
+        "REACT",
+        "Rest API",
+        "NodeJS",
+        "Expo",
+        "NumPy",
+        "Flask",
+        "Render",
+        "Git",
+        "HTML",
+        "VS Code"
+    ],
+    "education": {
+        "school": "Rensselaer Polytechnic Institute (RPI)",
+        "location": "Troy, NY",
+        "degree": "Bachelor of Science in Computer Science",
+        "expectedGraduation": "May 2026",
+        "awards": [
+            "Honors- Dean\u2019s Honor List",
+            "Rensselaer Leadership Award",
+            "Helaine Miriam Falkson Scholarship",
+            "Women's Leadership Award"
+        ]
     },
-    "Vaccination Status": "Partially Vaccinated (1 Dose)"
+    "courses": [
+        "ML and Optimization",
+        "Introduction to Algorithms",
+        "Data Structures",
+        "Foundations of Computer Science",
+        "Computer Organization"
+    ],
+    "experience": {
+        "ai/ml research intern": {
+            "company": "Paraxial Technologies",
+            "location": "Clifton Park, NY",
+            "startDate": "Spring 2024",
+            "endDate": "Present",
+            "tasks": [
+                "Implemented code for lung cancer CT screening to enhance the efficiency of pulmonary nodule detection.",
+                "Modified and optimized deep learning algorithms in C++ and Python, and extracted patient data for analysis."
+            ]
+        },
+        "president, girls who code college loops": {
+            "company": "Girls Who Code College Loops",
+            "location": "RPI, NY",
+            "startDate": "Spring 2024",
+            "endDate": "Present",
+            "tasks": [
+                "Spearheaded the establishment of the Girls Who Code College Loop at RPI, organizing events to support female participation in coding activities.",
+                "Responsible for overseeing meetings and organizing events to support female participation in tech."
+            ]
+        },
+        "undergraduate research assistant (wild me project)": {
+            "company": "RPI",
+            "location": "NY",
+            "startDate": "Spring 2024",
+            "endDate": "Present",
+            "tasks": [
+                "Utilized YOLOv8 and NumPy for the endangered zebra population in Zambia monitoring via computer vision.",
+                "Designed user-friendly web apps for the Wild Me project, integrating machine learning for better data visualization and efficient conservation."
+            ]
+        }
+    },
+    "projects": {
+        "edureka: event managing web application team": {
+            "company": "Rensselaer Center for Open Source",
+            "location": "RPI, NY",
+            "startDate": "Spring 2024",
+            "endDate": "Present",
+            "tasks": [
+                "Designed a mobile application for the RPI President, providing direct access to schedules and bookings on campus.",
+                "Collaborated with cross-functional teams to build REST APIs in Express.js and MongoDB, enabling seamless event data integration with two other event-scheduling mobile applications."
+            ]
+        },
+        "hackrpi mobile application team": {
+            "company": "Rensselaer Center for Open Source",
+            "location": "RPI, NY",
+            "startDate": "Fall 2024",
+            "endDate": "Present",
+            "tasks": [
+                "Contributed to the front-end development of a mobile app for the annual RPI Hackathon, streamlining participant registration and providing clear access to hackathon statistics.",
+                "Implemented new features using Figma and React, and managed version control via GitHub repositories."
+            ]
+        }
+    },
+    "extracurricular": {
+        "conferences": [
+            "Grace Hopper Celebration for Women in Computing",
+            "Girls Who Code Hiring Winter Summit"
+        ],
+        "clubs": [
+            "RPI Union Staff",
+            "Member of Girls Who Code Association at RPI",
+            "Outing Club Active",
+            "Cycling Club Active Member",
+            "Wellness Committee",
+            "Rensselaer Centre for Open Sourcing"
+        ]
+    }
 }

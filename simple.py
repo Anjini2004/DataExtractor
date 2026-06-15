@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 import os
+import re
 
 
 # Create memory file if it doesn't exist
@@ -30,6 +31,48 @@ def save_json(filename: str, data: str) -> str:
 
     return f"Saved valid JSON to {filename}"
 
+def sanitize_json_text(text: str) -> str:
+    """Escape invalid characters inside JSON string literals."""
+
+    result = []
+    in_string = False
+    escape = False
+
+    for ch in text:
+        if escape:
+            result.append(ch)
+            escape = False
+            continue
+
+        if ch == "\\":
+            result.append(ch)
+            escape = True
+            continue
+
+        if ch == '"':
+            in_string = not in_string
+            result.append(ch)
+            continue
+
+        if in_string:
+            if ch == "\n":
+                result.append("\\n")
+                continue
+            if ch == "\r":
+                result.append("\\r")
+                continue
+            if ch == "\t":
+                result.append("\\t")
+                continue
+            if ord(ch) < 0x20:
+                result.append(f"\\u{ord(ch):04x}")
+                continue
+
+        result.append(ch)
+
+    return ''.join(result)
+
+
 def extract_json(text: str):
     """Extract JSON object from model output."""
 
@@ -39,14 +82,63 @@ def extract_json(text: str):
     text = text.replace("```json", "").replace("```", "").strip()
 
     start = text.find("{")
-    end = text.rfind("}")
-
-    if start == -1 or end == -1:
+    if start == -1:
         raise ValueError("No JSON object found")
 
-    json_text = text[start:end + 1]
+    depth = 0
+    in_string = False
+    escape = False
+    end = None
 
-    return json.loads(json_text)
+    for i in range(start, len(text)):
+        ch = text[i]
+
+        if escape:
+            escape = False
+            continue
+
+        if ch == "\\":
+            escape = True
+            continue
+
+        if ch == '"':
+            in_string = not in_string
+            continue
+
+        if in_string:
+            continue
+
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+
+    if end is None:
+        raise ValueError("No complete JSON object found")
+
+    json_text = text[start:end + 1]
+    json_text = sanitize_json_text(json_text)
+
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError as e:
+        trailing_commas_fixed = re.sub(r',\s*(?=[}\]])', '', json_text)
+        if trailing_commas_fixed != json_text:
+            try:
+                return json.loads(trailing_commas_fixed)
+            except json.JSONDecodeError:
+                pass
+
+        snippet_start = max(0, e.pos - 40)
+        snippet_end = min(len(json_text), e.pos + 40)
+        snippet = json_text[snippet_start:snippet_end]
+        raise ValueError(
+            f"Invalid JSON: {e.msg} at position {e.pos}. "
+            f"Snippet: {snippet!r}"
+        ) from e
 
 @tool
 def save_memory(key: str, value: str) -> str:
@@ -159,6 +251,7 @@ Extract structured data from the following PDF text.
 Return ONLY valid JSON.
 Do not include markdown.
 Do not include explanation.
+Return only the JSON object with no text before or after.
 
 PDF text:
 {resume_text}
