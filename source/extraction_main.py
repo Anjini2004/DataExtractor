@@ -7,7 +7,11 @@ import requests
 import json
 import os
 import re
+from pdf2image import convert_from_path
+import easyocr
 
+# Create OCR model ONCE
+ocr_reader = easyocr.Reader(["en"], gpu=False)
 
 @tool
 def save_json(filename: str, data: str) -> str:
@@ -184,7 +188,7 @@ def extract_json(text):
 
 @tool
 def get_data(path: str) -> str:
-    """Read text from a PDF resume file."""
+    """Read PDF using both raw text extraction and OCR, then combine the results."""
 
     if not os.path.exists(path):
         return f"File not found: {path}. Available files: {os.listdir()}"
@@ -192,23 +196,47 @@ def get_data(path: str) -> str:
     if os.path.getsize(path) == 0:
         return f"File exists but is empty: {path}"
 
+    raw_text = ""
+    ocr_text = ""
+
+    # 1. Raw PDF text extraction
     try:
         reader = PdfReader(path)
-        text = ""
 
-        for page in reader.pages:
+        for i, page in enumerate(reader.pages):
             page_text = page.extract_text()
             if page_text:
-                text += page_text + "\n"
-
-        if not text.strip():
-            return "No text could be extracted from the PDF. It may be scanned/image-based."
-
-        return text[:8000]
+                raw_text += f"\n--- RAW TEXT PAGE {i + 1} ---\n"
+                raw_text += page_text + "\n"
 
     except Exception as e:
-        return f"Could not read PDF: {str(e)}"
-    
+        raw_text = f"\nRaw PDF extraction failed: {str(e)}\n"
+
+    # 2. OCR extraction from PDF pages
+    try:
+        images = convert_from_path(path, dpi=200)
+
+        for i, image in enumerate(images):
+            results = ocr_reader.readtext(image, detail=0)
+            page_ocr_text = "\n".join(results)
+
+            if page_ocr_text.strip():
+                ocr_text += f"\n--- OCR TEXT PAGE {i + 1} ---\n"
+                ocr_text += page_ocr_text + "\n"
+
+    except Exception as e:
+        ocr_text = f"\nOCR extraction failed: {str(e)}\n"
+
+    combined_text = f"""
+RAW PDF TEXT:
+{raw_text}
+
+OCR TEXT:
+{ocr_text}
+"""
+
+    return combined_text[:12000]
+
 @tool
 def list_files() -> str:
     """List all files available in the current working directory. Use this tool whenever the user asks what files exist, what files are available, or asks to list files."""
